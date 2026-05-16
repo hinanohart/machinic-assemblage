@@ -20,9 +20,7 @@ classifiers = [
   "Topic :: Scientific/Engineering",
   "Intended Audience :: Science/Research",
 ]
-dependencies = [
-  "pydantic>=2.5",
-]
+dependencies = []
 
 [project.optional-dependencies]
 viz = ["networkx>=3.2"]

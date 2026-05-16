@@ -33,6 +33,16 @@ detector is not in the protocol. See `docs/limits.md` on Gödel-style regress.
 Skeleton only in v0.1.0. Full adapter (with end-to-end translation including
 `Command(goto=...)` records into `Utterance(kind="rule_change", ...)`) tracked for v0.2.0.
 
+## os-climate adapter stub
+
+The Phase-1 architecture review listed three adapter stubs:
+`adapters/{langgraph, obsidian, os_climate}_adapter.py`. v0.1.0 ships the first two; the
+os-climate skeleton was deferred because the upstream os-climate API surface is still
+shifting, and a skeleton that does not match the live API misleads more than it
+documents. The environmental axis instead reads `DeploymentContext.environmental_kgco2eq_estimate`
+directly (see `docs/environmental.md`). Plan: add `adapters/os_climate_adapter.py` in
+v0.2.0 alongside the `[env]` extra.
+
 ## CONTRIBUTORS.toml — schema evolution
 
 Currently free-form-but-conventional. A future revision should consider whether to

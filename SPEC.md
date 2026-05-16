@@ -167,8 +167,12 @@ def evaluate(
     assemblage: Assemblage,
     context: DeploymentContext,
     history: Sequence[Utterance] = (),
+    assemblage_after: Assemblage | None = None,
 ) -> ProtocolReport
 ```
+
+The optional `assemblage_after` argument supplies the post-rule-change structure for the
+groupe-sujet test (§3.4). When `None`, the test reports `False` with that as evidence.
 
 Steps:
 
@@ -283,7 +287,7 @@ machinic-assemblage is **not**:
 
 ## 7. Stability promise (v0.1.x)
 
-- Public API surface (the 18 symbols re-exported from `machinic_assemblage/__init__.py`) is stable
+- Public API surface (the 23 symbols re-exported from `machinic_assemblage/__init__.py`) is stable
   across v0.1.x. Additions are allowed; deletions and signature changes require a v0.2.0.
 - The political statement (§0) is fixed across v0.1.x. Editing it requires a v0.2.0.
 - The "ten intervention points" list (§5) may grow; it will not shrink.

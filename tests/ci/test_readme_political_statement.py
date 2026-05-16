@@ -15,7 +15,8 @@ POLITICAL_STATEMENT_FRAGMENTS = (
     "machinic enslavement",
     "Deleuzian capitalism",
     "Refusal of capture is",
-    "inconvenient by design" if False else "deliberately not implemented",
+    "deliberately not implemented",
+    "inconvenient by design",
     "use LangGraph",
 )
 

@@ -125,7 +125,7 @@ ambiguous consultation, and an explicit capture pattern.
 ## Install
 
 ```bash
-pip install machinic-assemblage           # core: only pydantic
+pip install machinic-assemblage           # core: stdlib only, no runtime deps
 pip install machinic-assemblage[viz]      # adds networkx for export
 pip install machinic-assemblage[dev]      # tests + lint + types
 ```
