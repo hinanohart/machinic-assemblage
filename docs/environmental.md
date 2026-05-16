@@ -22,8 +22,8 @@ Operators should override the threshold via `environmental_threshold_kg=` when c
 
 CodeCarbon is the obvious dependency. We do not pull it in for v0.1.0 because:
 
-1. It adds a non-trivial install footprint to a protocol whose core dependency is one
-   library (`pydantic`).
+1. It adds a non-trivial install footprint to a protocol whose core has no runtime
+   dependencies (stdlib only).
 2. Its accuracy depends on the host's `intel_powergadget` / `nvidia-smi` availability,
    which makes the environmental axis silently bimodal across operators.
 3. Real environmental accounting must account for the supply chain, not just runtime

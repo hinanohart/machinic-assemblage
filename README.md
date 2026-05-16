@@ -21,7 +21,7 @@ The above paragraph is fixed-string asserted by CI; see
 
 ## What this is and is not
 
-**It is**: a 200-line protocol specification + a reference implementation in one Python
+**It is**: a ~300-line protocol specification + a reference implementation in one Python
 package. The protocol forces three things at the type level that other multi-agent
 frameworks make optional:
 

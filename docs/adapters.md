@@ -1,6 +1,6 @@
 # Adapters
 
-The core of machinic-assemblage has one runtime dependency (`pydantic`) and does not import
+The core of machinic-assemblage has no runtime dependencies (stdlib only) and does not import
 any third-party orchestrator. Adapters live in `src/machinic_assemblage/adapters/` and are
 optional.
 

@@ -12,9 +12,10 @@ Citations in this module:
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal, NewType
+from typing import Literal, NewType, get_args
 
 NodeId = NewType("NodeId", str)
 
@@ -78,6 +79,8 @@ class HeterogeneousEdge:
             raise ValueError("HeterogeneousEdge.members must be non-empty")
         if not self.semantic:
             raise ValueError("HeterogeneousEdge.semantic must be non-empty")
+        if not math.isfinite(self.weight):
+            raise ValueError("HeterogeneousEdge.weight must be finite (no NaN/inf)")
         if self.weight < 0.0:
             raise ValueError("HeterogeneousEdge.weight must be non-negative")
         if self.subtract and not self.subtract_reason:
@@ -206,11 +209,18 @@ class DeploymentContext:
             raise ValueError("DeploymentContext.operator_org must be non-empty")
         if not self.declared_at_iso:
             raise ValueError("DeploymentContext.declared_at_iso must be ISO 8601, not empty")
-        if (
-            self.environmental_kgco2eq_estimate is not None
-            and self.environmental_kgco2eq_estimate < 0.0
-        ):
-            raise ValueError("DeploymentContext.environmental_kgco2eq_estimate cannot be negative")
+        if self.revenue_model not in get_args(RevenueModel):
+            raise ValueError(
+                f"DeploymentContext.revenue_model must be one of "
+                f"{get_args(RevenueModel)}; got {self.revenue_model!r}"
+            )
+        if self.environmental_kgco2eq_estimate is not None:
+            if not math.isfinite(self.environmental_kgco2eq_estimate):
+                raise ValueError("DeploymentContext.environmental_kgco2eq_estimate must be finite")
+            if self.environmental_kgco2eq_estimate < 0.0:
+                raise ValueError(
+                    "DeploymentContext.environmental_kgco2eq_estimate cannot be negative"
+                )
 
 
 @dataclass(frozen=True)

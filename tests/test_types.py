@@ -52,6 +52,30 @@ class TestHeterogeneousEdge:
                 vector=Vector.TERRITORIAL,
             )
 
+    def test_nan_weight_rejected(self):
+        import math
+
+        with pytest.raises(ValueError, match="finite"):
+            HeterogeneousEdge(
+                members=frozenset({NodeId("a")}),
+                semantic="x",
+                side=Side.CONTENT,
+                vector=Vector.TERRITORIAL,
+                weight=math.nan,
+            )
+
+    def test_inf_weight_rejected(self):
+        import math
+
+        with pytest.raises(ValueError, match="finite"):
+            HeterogeneousEdge(
+                members=frozenset({NodeId("a")}),
+                semantic="x",
+                side=Side.CONTENT,
+                vector=Vector.TERRITORIAL,
+                weight=math.inf,
+            )
+
     def test_negative_weight_rejected(self):
         with pytest.raises(ValueError, match="weight"):
             HeterogeneousEdge(
@@ -164,6 +188,16 @@ class TestDeploymentContext:
             DeploymentContext(
                 operator_org="",
                 revenue_model="none",
+                end_users_consent_uri=None,
+                used_in_optimization_for=frozenset(),
+                declared_at_iso="2026-01-01",
+            )
+
+    def test_invalid_revenue_model_rejected(self):
+        with pytest.raises(ValueError, match="revenue_model"):
+            DeploymentContext(
+                operator_org="x",
+                revenue_model="Ads",  # type: ignore[arg-type]
                 end_users_consent_uri=None,
                 used_in_optimization_for=frozenset(),
                 declared_at_iso="2026-01-01",
