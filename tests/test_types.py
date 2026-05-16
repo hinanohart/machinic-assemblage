@@ -202,6 +202,24 @@ class TestCritique:
                 falsifiability_condition="dissolves if criterion C is publicly demonstrated",
             )
 
+    def test_other_author_with_single_char_tokens_rejected(self):
+        """v0.1.2 bypass-pin: 1-char tokens with 4-digit year must be rejected."""
+        with pytest.raises(ValueError, match="primary_source"):
+            Critique(
+                text="a sufficient text body — primary_source: a, b, c 9999",
+                source_ref=SourceRef(author="<other>", work="X", edition="Y"),
+                falsifiability_condition="dissolves if criterion C is publicly demonstrated",
+            )
+
+    def test_other_author_with_whitespace_only_tokens_rejected(self):
+        """v0.1.2 bypass-pin: whitespace-only citation tokens must be rejected."""
+        with pytest.raises(ValueError, match="primary_source"):
+            Critique(
+                text="a sufficient text body — primary_source:  ,  ,   1975",
+                source_ref=SourceRef(author="<other>", work="X", edition="Y"),
+                falsifiability_condition="dissolves if criterion C is publicly demonstrated",
+            )
+
 
 class TestDeploymentContext:
     def test_empty_org_rejected(self):

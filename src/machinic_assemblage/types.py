@@ -153,10 +153,14 @@ _ALLOWED_CRITIQUE_AUTHORS = frozenset(
 )
 
 # Closes the `<other>` author hatch. The substring `"primary_source:"` alone is not enough —
-# a real citation must follow: `Author, Work, Publisher YEAR`. Year must be a four-digit number.
-# This is load-bearing: a bare `primary_source:` keyword would let unsourced critiques through.
+# a real citation must follow: `Author, Work, Publisher YEAR`. Each token must start with at
+# least two non-whitespace characters; year must be a four-digit number.
+#
+# Honest limit: a regex cannot enforce *semantic* citation quality. The CI grep blocks 1-char
+# tokens and whitespace-only tokens (the cheapest dummy citations); real-looking dummies like
+# `aa, bb, cc 1999` will still pass and rely on human review per SPEC §5 intervention point 5.
 _PRIMARY_SOURCE_RE = re.compile(
-    r"primary_source:\s*[^,\n]{2,},\s*[^,\n]{2,},\s*[^,\n]{2,}\b\d{4}\b",
+    r"primary_source:\s*\S\S[^,\n]*,\s*\S\S[^,\n]*,\s*\S\S[^,\n]*\s+\d{4}\b",
     re.IGNORECASE,
 )
 

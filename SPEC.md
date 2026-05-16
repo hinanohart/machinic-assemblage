@@ -55,9 +55,12 @@ A `HeterogeneousEdge` is an N-ary relation across nodes of possibly different ki
 - `vector: Vector` — `TERRITORIAL` or `DETERRITORIAL` (same plateau)
 - `weight: float` — non-negative, default 1.0
 - `subtract: frozenset[NodeId]` — the "N-1" form (*Mille Plateaux*, "Subtract the unique";
-  Massumi 1987 pp. 6, 21–22). An edge with non-empty `subtract` represents the multiplicity that
-  results from withdrawing those nodes from the molar identity, not the same edge with fewer
-  members.
+  Massumi 1987 pp. 6, 21–22). An edge with non-empty `subtract` represents the multiplicity
+  that results from withdrawing those nodes from the molar identity, not the same edge with
+  fewer members. v0.1.x trade-off: because `subtract` is a `frozenset[NodeId]`, repeat-applying
+  `subtract_one(node, reason)` on the same node is idempotent — the first reason is retained.
+  Holding multiple reasons against the same node requires v0.2.0's type change to
+  `frozenset[tuple[NodeId, str]]`; this is a known design gap, not a bug.
 - `subtract_reason: str` — required iff `subtract` is non-empty. The reason becomes part of the
   edge's hash, so two N-1 operations with different motivations are not collapsed.
 

@@ -102,6 +102,30 @@ def test_subtract_one_is_idempotent_on_repeat_apply():
     assert structure_signature(a1) == structure_signature(a2)
 
 
+def test_subtract_one_with_different_reason_keeps_first():
+    """v0.1.x design pin (SPEC §2.1): same-node repeat-subtract retains the first reason.
+
+    This is the explicit trade-off documented in SPEC §2.1: because `subtract` is a
+    `frozenset[NodeId]`, multiple reasons against the same node cannot be held simultaneously.
+    The first reason wins; v0.2.0 is expected to change the type to
+    `frozenset[tuple[NodeId, str]]` to remove this limit.
+    """
+    nodes = [Node(id=NodeId("a"), kind="human"), Node(id=NodeId("b"), kind="human")]
+    edges = [
+        HeterogeneousEdge(
+            members=frozenset({NodeId("a"), NodeId("b")}),
+            semantic="x",
+            side=Side.CONTENT,
+            vector=Vector.TERRITORIAL,
+        )
+    ]
+    a0 = build_assemblage(nodes, edges)
+    a1 = subtract_one(a0, NodeId("a"), reason="first reason here")
+    a2 = subtract_one(a1, NodeId("a"), reason="a different second reason here")
+    # Signature unchanged: the second reason is silently dropped per the v0.1.x design.
+    assert structure_signature(a1) == structure_signature(a2)
+
+
 def test_signature_stable_under_float_drift():
     """MAJOR-4: weight from `0.1 + 0.2` must hash identically to `0.3`."""
     nodes = [Node(id=NodeId("a"), kind="human")]

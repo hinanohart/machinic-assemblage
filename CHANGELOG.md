@@ -6,6 +6,51 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). API stability promises
 are in SPEC §7.
 
+## [0.1.2] — 2026-05-17
+
+Patch release addressing the independent-critic findings against v0.1.1. No public API change;
+the 23 symbols in `__all__` remain stable across the v0.1.x line (SPEC §7).
+
+### Hardened
+
+- `Critique` `<other>` author regex now requires each of the three citation tokens to start
+  with **two non-whitespace characters**. The v0.1.1 form accepted `primary_source: a, b, c
+  9999` (1-char dummy tokens) and whitespace-only tokens; v0.1.2 closes those forms. A regex
+  cannot enforce semantic citation quality, so this is still a syntactic minimum — real-looking
+  dummies (`aa, bb, cc 1999`) will still pass and rely on the human-review intervention point
+  in SPEC §5.
+
+### Fixed
+
+- `__version__` in `machinic_assemblage/__init__.py` synced to `"0.1.2"`. The v0.1.0 → v0.1.1
+  bump missed this constant, so `import machinic_assemblage; machinic_assemblage.__version__`
+  on v0.1.1 returned the stale `"0.1.0"` while `pip show` reported `0.1.1`. v0.1.2 also fixes
+  this drift retroactively.
+- SPEC §2.1 explicitly documents the v0.1.x N-1 trade-off: because `subtract` is a
+  `frozenset[NodeId]`, repeat-applying `subtract_one(node, reason)` on the same node is
+  idempotent — the first reason is retained. Holding multiple reasons against the same node
+  requires v0.2.0's type change to `frozenset[tuple[NodeId, str]]`.
+
+### Honest limits (post-v0.1.1 audit retroactive note)
+
+- v0.1.1's "load-bearing design protections" claim was tighter than v0.1.0 but still
+  incomplete on two dimensions:
+  - The `<other>` regex permitted minimal dummy citations (any 2-char tokens, including
+    `a, b, c 9999`). v0.1.2 narrows that to a 2-non-whitespace-char minimum per token. Full
+    semantic enforcement remains out of scope for syntactic checks and is delegated to the
+    human-review intervention point in SPEC §5.
+  - `ThreeEcologiesKPI.__init_subclass__` blocks the *subclass* attack documented in v0.1.1
+    but does not block runtime monkey-patching of the class object itself
+    (`ThreeEcologiesKPI.composite = property(...)` will still succeed). This is by design:
+    the protocol guards against code that ships, not against adversarial monkey-patch.
+
+### Added — tests
+
+- `test_other_author_with_single_char_tokens_rejected` pins the 1-char dummy rejection.
+- `test_other_author_with_whitespace_only_tokens_rejected` pins the whitespace-only rejection.
+- `test_subtract_one_with_different_reason_keeps_first` pins the v0.1.x N-1 idempotency
+  trade-off so the behaviour cannot regress silently.
+
 ## [0.1.1] — 2026-05-17
 
 Patch release. Closes four load-bearing-design bypasses discovered by post-publication audit;

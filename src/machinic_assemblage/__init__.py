@@ -60,4 +60,4 @@ __all__ = [
     "transversality_index",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
