@@ -1,0 +1,93 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "machinic-assemblage"
+version = "0.1.0"
+description = "Protocol spec for evaluating collective enunciation under three-ecology KPIs, with capture-context declaration mandated at evaluate() time. Inconvenient by design."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "machinic-assemblage contributors" }]
+keywords = ["multi-agent", "evaluation", "protocol", "ethics", "guattari"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+  "Intended Audience :: Science/Research",
+]
+dependencies = [
+  "pydantic>=2.5",
+]
+
+[project.optional-dependencies]
+viz = ["networkx>=3.2"]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "hypothesis>=6.100",
+  "ruff>=0.5",
+  "mypy>=1.10",
+]
+
+[project.urls]
+Specification = "SPEC.md"
+Changelog = "CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/machinic_assemblage"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests", "examples"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "RUF"]
+ignore = [
+  "E501",
+  "RUF001",
+  "RUF002",
+  "RUF003",
+  "UP042",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B017", "N802", "N806"]
+"examples/*" = ["T20"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["machinic_assemblage"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_any_generics = true
+no_implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = ["networkx.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+filterwarnings = [
+  "default::UserWarning",
+]
+
+[tool.coverage.run]
+source = ["src/machinic_assemblage"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]

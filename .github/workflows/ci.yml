@@ -1,0 +1,74 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-types-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # groupe-sujet self-check reads git log
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Ruff (lint)
+        run: ruff check .
+
+      - name: Ruff (format check)
+        run: ruff format --check .
+
+      - name: Mypy --strict
+        run: mypy --strict src/machinic_assemblage
+
+      - name: Composite-score lint
+        run: python tools/lint_composite_score.py
+
+      - name: Pytest with coverage
+        run: pytest --cov=machinic_assemblage --cov-report=term-missing --cov-fail-under=80
+
+      - name: Surface groupe-sujet warning to PR
+        if: always()
+        run: |
+          python -W default::UserWarning -m pytest tests/ci/test_groupe_sujet_self_check.py -q 2>&1 | tee groupe-sujet.log || true
+          if grep -q "groupe-sujet self-check did not pass" groupe-sujet.log; then
+            echo "::warning title=groupe-sujet::Project's own groupe-sujet self-check did not pass; see SPEC §3.4. This is a warning, not a failure."
+          fi
+
+  example-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      - name: Run all examples
+        run: |
+          for f in examples/*.py; do
+            echo "=== $f ==="
+            python "$f"
+          done

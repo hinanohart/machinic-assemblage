@@ -1,0 +1,16 @@
+# CONTRIBUTORS to machinic-assemblage
+#
+# Append-only. One entry per contributor. Each contributor self-describes their `kind`.
+# This is not a CLA; it is a registry of who is enunciating.
+
+[[contributor]]
+name = "initial-author"
+kind = "human"
+joined_iso = "2026-05-17"
+note = "v0.1.0 spec and reference implementation"
+
+[[contributor]]
+name = "claude-opus-4-7"
+kind = "agent"
+joined_iso = "2026-05-17"
+note = "co-author of v0.1.0 reference implementation under user direction"
