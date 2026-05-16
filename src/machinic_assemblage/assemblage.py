@@ -41,13 +41,22 @@ def _canonical_node(n: Node) -> dict[str, object]:
     return {"id": n.id, "kind": n.kind, "attrs": list(n.attrs)}
 
 
+def _canonical_weight(w: float) -> str:
+    """Stringify weight deterministically so `0.1 + 0.2` and `0.3` hash identically.
+
+    SPEC §2.2 promises order-independent signatures. Embedding `float` literals from
+    arbitrary arithmetic paths would otherwise break the promise across caller chains.
+    """
+    return f"{w:.12g}"
+
+
 def _canonical_edge(e: HeterogeneousEdge) -> dict[str, object]:
     return {
         "members": sorted(e.members),
         "semantic": e.semantic,
         "side": e.side.value,
         "vector": e.vector.value,
-        "weight": e.weight,
+        "weight": _canonical_weight(e.weight),
         "subtract": sorted(e.subtract),
         "subtract_reason": e.subtract_reason,
     }
@@ -88,7 +97,7 @@ def subtract_one(a: Assemblage, node_id: NodeId, reason: str) -> Assemblage:
         raise ValueError(f"subtract_one: unknown node id {node_id!r}")
     new_edges: set[HeterogeneousEdge] = set()
     for edge in a.edges:
-        if node_id in edge.members:
+        if node_id in edge.members and node_id not in edge.subtract:
             new_edges.add(
                 HeterogeneousEdge(
                     members=edge.members,
@@ -98,9 +107,7 @@ def subtract_one(a: Assemblage, node_id: NodeId, reason: str) -> Assemblage:
                     weight=edge.weight,
                     subtract=edge.subtract | {node_id},
                     subtract_reason=(
-                        f"{edge.subtract_reason}; {reason}".lstrip("; ")
-                        if edge.subtract_reason
-                        else reason
+                        f"{edge.subtract_reason}; {reason}" if edge.subtract_reason else reason
                     ),
                 )
             )

@@ -6,9 +6,23 @@ Guattari *Les Trois Écologies* §1.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 
 from machinic_assemblage.types import Critique, DeploymentContext, SourceRef, Utterance
+
+# Word-boundary regex prevents substring false-suppression (e.g. "adversarial" matching "ad").
+# These are load-bearing: a silent false-negative here would let the very capture the protocol
+# is meant to flag pass through unannotated.
+_AD_TARGETING_RE = re.compile(
+    r"\b(ads?|ad[-_\s]?targeting|targeting|attention[-_\s]?capture)\b",
+    re.IGNORECASE,
+)
+_DATA_SALE_RE = re.compile(
+    r"\b(data[-_\s]?sale|surveillance|dispossession)\b",
+    re.IGNORECASE,
+)
+_CONSENT_RE = re.compile(r"\bconsent\b", re.IGNORECASE)
 
 _LAZZARATO_AD_TARGETING = Critique(
     text=(
@@ -70,9 +84,8 @@ _GUATTARI_NO_CONSENT = Critique(
 )
 
 
-def _mentions(critique: Critique, keywords: tuple[str, ...]) -> bool:
-    lower = critique.text.lower()
-    return any(k in lower for k in keywords)
+def _matches(critique: Critique, pattern: re.Pattern[str]) -> bool:
+    return bool(pattern.search(critique.text))
 
 
 def evaluate_capture(
@@ -86,19 +99,22 @@ def evaluate_capture(
     redundant with operator declarations to keep the operator honest — if a concern is
     declared, no derived critique is appended; if it is not, the protocol adds the citation
     itself.
+
+    Keyword matching uses word-boundary regex (case-insensitive). Substring matches such as
+    ``"adversarial"`` containing ``"ad"`` no longer falsely suppress the Lazzarato
+    ad-targeting critique. This is load-bearing: a silent false-negative here would let the
+    very capture this detector exists to flag pass through unannotated.
     """
     del history  # v0.1.0: history-conditioned critiques are tracked for v0.2.0
     out: list[Critique] = list(context.used_in_optimization_for)
     declared = tuple(out)
-    if context.revenue_model == "ads" and not any(
-        _mentions(c, ("ad", "ads", "targeting", "attention")) for c in declared
-    ):
+    if context.revenue_model == "ads" and not any(_matches(c, _AD_TARGETING_RE) for c in declared):
         out.append(_LAZZARATO_AD_TARGETING)
     if context.revenue_model == "data_sale" and not any(
-        _mentions(c, ("data sale", "data_sale", "surveillance", "dispossession")) for c in declared
+        _matches(c, _DATA_SALE_RE) for c in declared
     ):
         out.append(_TERRANOVA_DATA_SALE)
     if context.end_users_consent_uri is None and context.revenue_model != "none":
-        if not any(_mentions(c, ("consent",)) for c in declared):
+        if not any(_matches(c, _CONSENT_RE) for c in declared):
             out.append(_GUATTARI_NO_CONSENT)
     return tuple(out)

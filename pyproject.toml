@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "machinic-assemblage"
-version = "0.1.0"
+version = "0.1.1"
 description = "Protocol spec for evaluating collective enunciation under three-ecology KPIs, with capture-context declaration mandated at evaluate() time. Inconvenient by design."
 readme = "README.md"
 requires-python = ">=3.11"

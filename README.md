@@ -13,8 +13,8 @@ Status: alpha (v0.1.0). Python 3.11+. Apache-2.0.
 > "machinic enslavement" reduced to engagement metrics, and what Terranova calls
 > "Deleuzian capitalism" reduced to dynamic-topology marketing. This project does not
 > attempt to be neutral. Refusal of capture is a load-bearing design requirement;
-> convenience switches that would erase that refusal are deliberately not implemented.
-> If you want a neutral multi-agent orchestrator, use LangGraph.
+> convenience switches that would erase that refusal are deliberately not implemented —
+> inconvenient by design. If you want a neutral multi-agent orchestrator, use LangGraph.
 
 The above paragraph is fixed-string asserted by CI; see
 [SPEC §0](SPEC.md#0-political-statement-ci-enforced).

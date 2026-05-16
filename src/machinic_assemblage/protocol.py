@@ -12,6 +12,11 @@ import os
 import pathlib
 from collections.abc import Sequence
 
+try:
+    import fcntl as _fcntl
+except ImportError:  # pragma: no cover  # non-POSIX (Windows)
+    _fcntl = None  # type: ignore[assignment]
+
 from machinic_assemblage.assemblage import structure_signature
 from machinic_assemblage.capture_detector import evaluate_capture
 from machinic_assemblage.ecologies import compute_three_ecologies
@@ -50,7 +55,8 @@ def evaluate(
     t = transversality_index(assemblage, history)
     eco = compute_three_ecologies(assemblage, context, history)
     is_group, evidence = detect_subject_group(history, assemblage, assemblage_after)
-    warnings = evaluate_capture(context, history)
+    # Local name avoids shadowing `import warnings` should a future revision add it.
+    capture_warnings_list = evaluate_capture(context, history)
     sig = structure_signature(assemblage)
     return ProtocolReport(
         timestamp_iso=_now_iso(),
@@ -59,7 +65,7 @@ def evaluate(
         three_ecologies=eco,
         is_subject_group=is_group,
         groupe_sujet_evidence=evidence,
-        capture_warnings=warnings,
+        capture_warnings=capture_warnings_list,
         context=context,
     )
 
@@ -83,12 +89,25 @@ def _to_jsonable(obj: object) -> object:
 def commit(report: ProtocolReport, path: str | os.PathLike[str]) -> None:
     """Append a `ProtocolReport` as one JSON line to `path`.
 
-    Creates the parent directory if needed. Persistence is intentionally simple — operators
-    are expected to ship their reports through whatever audit pipeline they actually use.
+    The append is a single ``write()`` of ``line + "\\n"``, guarded by ``fcntl.flock(LOCK_EX)``
+    on POSIX so concurrent writers cannot interleave a half-line. On platforms without
+    ``fcntl`` (Windows) the single-write keeps the JSONL well-formed but cross-process
+    locking degrades to best-effort.
+
+    Persistence is intentionally simple — operators are expected to ship their reports
+    through whatever audit pipeline they actually use.
     """
     p = pathlib.Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    line = json.dumps(_to_jsonable(report), separators=(",", ":"))
+    line = json.dumps(_to_jsonable(report), separators=(",", ":")) + "\n"
     with p.open("a", encoding="utf-8") as f:
-        f.write(line)
-        f.write("\n")
+        if _fcntl is not None:
+            _fcntl.flock(f.fileno(), _fcntl.LOCK_EX)
+            try:
+                f.write(line)
+                f.flush()
+            finally:
+                _fcntl.flock(f.fileno(), _fcntl.LOCK_UN)
+        else:
+            f.write(line)
+            f.flush()

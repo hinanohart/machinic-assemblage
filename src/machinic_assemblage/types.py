@@ -13,9 +13,10 @@ Citations in this module:
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal, NewType, get_args
+from typing import Any, Literal, NewType, get_args
 
 NodeId = NewType("NodeId", str)
 
@@ -151,6 +152,14 @@ _ALLOWED_CRITIQUE_AUTHORS = frozenset(
     }
 )
 
+# Closes the `<other>` author hatch. The substring `"primary_source:"` alone is not enough —
+# a real citation must follow: `Author, Work, Publisher YEAR`. Year must be a four-digit number.
+# This is load-bearing: a bare `primary_source:` keyword would let unsourced critiques through.
+_PRIMARY_SOURCE_RE = re.compile(
+    r"primary_source:\s*[^,\n]{2,},\s*[^,\n]{2,},\s*[^,\n]{2,}\b\d{4}\b",
+    re.IGNORECASE,
+)
+
 
 @dataclass(frozen=True)
 class Critique:
@@ -160,9 +169,9 @@ class Critique:
     is itself the move Lazzarato (2014) critiques: it converts structural critique into a
     compliance checklist. A `Critique` is answerable, not categorical.
 
-    Operators may extend `_ALLOWED_CRITIQUE_AUTHORS` for their own critique tradition, but
-    the v0.1.0 default insists on at least one citation to the named primary sources or to a
-    `"<other>"` author paired with a `"primary_source: ..."` entry in `text`.
+    The `<other>` author escape requires a regex-matched `primary_source:` citation of the
+    form ``primary_source: Author, Work, Publisher YEAR``. Bare keyword substrings are
+    rejected.
     """
 
     text: str
@@ -181,12 +190,13 @@ class Critique:
                 "A critique with no observable disconfirmation is dogma, not analysis."
             )
         author_ok = self.source_ref.author in _ALLOWED_CRITIQUE_AUTHORS or (
-            self.source_ref.author == "<other>" and "primary_source:" in self.text
+            self.source_ref.author == "<other>" and bool(_PRIMARY_SOURCE_RE.search(self.text))
         )
         if not author_ok:
             raise ValueError(
                 f"Critique.source_ref.author must be one of {_ALLOWED_CRITIQUE_AUTHORS} "
-                f"or '<other>' with 'primary_source: ...' in text; got {self.source_ref.author!r}."
+                f"or '<other>' with a regex-matching 'primary_source: Author, Work, "
+                f"Publisher YEAR' in text; got {self.source_ref.author!r}."
             )
 
 
@@ -229,12 +239,23 @@ class ThreeEcologiesKPI:
 
     No `composite` property exists and none will be added. See SPEC §2.6. A static lint
     (tools/lint_composite_score.py) rejects any function in this codebase whose signature
-    collapses this type to a single `float`.
+    collapses this type to a single `float`. Subclassing is also blocked at class-creation
+    time so that downstream code cannot re-introduce an aggregate score via
+    `class Foo(ThreeEcologiesKPI): @property composite`.
     """
 
     mental: float
     social: float
     environmental: float
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        raise TypeError(
+            "ThreeEcologiesKPI may not be subclassed. SPEC §2.6: a composite or aggregate "
+            "score over (mental, social, environmental) is intentionally absent and cannot "
+            "be re-introduced via inheritance or attribute injection. If you need a "
+            "weighted summary for your own pipeline, compute it in your own code on the "
+            "three values, and declare the tradeoff in your DeploymentContext."
+        )
 
     def __post_init__(self) -> None:
         for label, value in (

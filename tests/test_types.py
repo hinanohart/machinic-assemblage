@@ -181,6 +181,27 @@ class TestCritique:
         )
         assert c is not None
 
+    def test_other_author_with_bare_keyword_rejected(self):
+        """CRITICAL-1: substring 'primary_source:' alone must not bypass author validation."""
+        with pytest.raises(ValueError, match="primary_source"):
+            Critique(
+                text="a sufficient text body — primary_source: bad",
+                source_ref=SourceRef(author="<other>", work="X", edition="Y"),
+                falsifiability_condition="dissolves if criterion C is publicly demonstrated",
+            )
+
+    def test_other_author_with_no_year_rejected(self):
+        """CRITICAL-1: 'primary_source:' citation without a 4-digit year is rejected."""
+        with pytest.raises(ValueError, match="primary_source"):
+            Critique(
+                text=(
+                    "a sufficient text body — primary_source: Foucault, "
+                    "Surveiller et Punir, Gallimard"
+                ),
+                source_ref=SourceRef(author="<other>", work="X", edition="Y"),
+                falsifiability_condition="dissolves if criterion C is publicly demonstrated",
+            )
+
 
 class TestDeploymentContext:
     def test_empty_org_rejected(self):
@@ -228,3 +249,19 @@ class TestThreeEcologiesKPI:
         assert not hasattr(k, "composite")
         assert not hasattr(k, "score")
         assert not hasattr(k, "total")
+
+    def test_subclassing_blocked(self):
+        """CRITICAL-2: subclasses cannot re-introduce a composite/score via inheritance."""
+        with pytest.raises(TypeError, match="may not be subclassed"):
+
+            class CompositeKPI(ThreeEcologiesKPI):
+                pass
+
+    def test_subclassing_with_property_blocked(self):
+        """CRITICAL-2: even the dangerous case (composite as @property on a subclass) fails."""
+        with pytest.raises(TypeError, match="may not be subclassed"):
+
+            class WeightedKPI(ThreeEcologiesKPI):
+                @property
+                def composite(self) -> float:
+                    return 0.5 * self.mental + 0.3 * self.social + 0.2 * self.environmental

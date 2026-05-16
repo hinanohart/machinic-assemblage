@@ -33,5 +33,5 @@ def collective_enunciation_signature(history: Sequence[Utterance]) -> str:
     payload = [
         {"speaker": u.speaker, "kind": u.kind, "timestamp_iso": u.timestamp_iso} for u in history
     ]
-    encoded = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()

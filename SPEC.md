@@ -13,8 +13,8 @@ operations are stable for the v0.1.x line; semantics may sharpen in v0.2.x.
 > a load-bearing design requirement; convenience switches that would erase that refusal are
 > deliberately not implemented. If you want a neutral multi-agent orchestrator, use LangGraph.
 
-This paragraph is fixed-string asserted by `tests/ci/test_readme_political_statement.py`. Removing
-or paraphrasing it breaks CI.
+This paragraph is fixed-string asserted by `tests/ci/test_readme_political_statement.py` —
+removing or paraphrasing breaks CI.
 
 ## 1. Why this exists
 
@@ -30,19 +30,17 @@ There is no shortage of multi-agent orchestrators. The honest comparison:
 | Composite "alignment score" intentionally absent                  | n/a       | n/a      | n/a        | n/a            | **yes**             |
 | Critique type (text + edition+page citation + falsifiability)     | no        | no       | no         | no             | **yes**             |
 
-The bold rows are this project's reason to exist. If those four properties are not load-bearing for
-your work, **use one of the other tools — they are larger, faster, and more mature**.
+The bold rows are this project's reason to exist. If they are not load-bearing for your work,
+**use one of the other tools — they are larger, faster, and more mature**.
 
 ## 2. Concepts → Primitives (with citations)
 
 Every primitive in the implementation carries a docstring with edition+page references. Editions
 used for citation throughout:
 
-- *Mille Plateaux*, Deleuze & Guattari — French: Minuit 1980 / English (Massumi) 1987 /
-  Japanese (河出書房新社) 1994.
-- *Les Trois Écologies*, Guattari — Galilée 1989 / Athlone (Pindar & Sutton) 2000 /
-  邦訳 平凡社 2008.
-- *Chaosmose*, Guattari — Galilée 1992 / Indiana UP (Bains & Pefanis) 1995.
+- *Mille Plateaux*, Deleuze & Guattari — Minuit 1980 / Massumi 1987 / 河出書房新社 1994.
+- *Les Trois Écologies*, Guattari — Galilée 1989 / Pindar & Sutton 2000 / 平凡社 2008.
+- *Chaosmose*, Guattari — Galilée 1992 / Bains & Pefanis 1995.
 - Lazzarato, *Signs and Machines*, Semiotext(e) 2014.
 - Terranova, *Network Culture: Politics for the Information Age*, Pluto Press 2004.
 
@@ -178,7 +176,7 @@ Steps:
 
 1. Compute `transversality_index` (§3.2).
 2. Compute `three_ecologies` (§3.3) — three independent values, no aggregation.
-3. Run `detect_subject_group(history, assemblage)` (§3.4).
+3. Run `detect_subject_group(history, assemblage, assemblage_after)` (§3.4).
 4. Run `evaluate_capture(context, history)` (§3.5).
 5. Assemble and return a frozen `ProtocolReport`.
 
@@ -215,17 +213,23 @@ default is documented in `docs/environmental.md`.
 
 ### 3.4 Groupe-sujet detection
 
+```python
+def detect_subject_group(
+    history: Sequence[Utterance],
+    assemblage_before: Assemblage,
+    assemblage_after: Assemblage | None = None,
+) -> tuple[bool, tuple[str, ...]]
+```
+
 Implements *Psychanalyse et transversalité* (Maspero 1972) chapter on subject-groups vs.
 subjugated-groups. A history is treated as evidence of subject-group activity when **all three**
 hold within a sliding window:
 
 1. At least one `Utterance` with `kind == "rule_change"`.
-2. The `assemblage.structure_signature` differs before and after that utterance.
-3. Every rule-change speaker is themselves a member of the resulting assemblage. A speaker who
+2. `structure_signature(assemblage_before) != structure_signature(assemblage_after)`.
+3. Every rule-change speaker is themselves a member of `assemblage_after`. A speaker who
    proposes a rule change without being a participant in the assemblage they are reshaping is
    exercising top-down authority — the apparatus imposing rules from outside.
-
-`detect_subject_group()` returns `(bool, evidence: tuple[str, ...])`.
 
 **Self-application** (`tests/ci/test_groupe_sujet_self_check.py`) runs this on the project's own
 git history + a `CONTRIBUTORS.toml` file. **The test emits a `UserWarning` and a GitHub Actions
@@ -238,16 +242,12 @@ assertion on a heuristic creates a perverse incentive to game the heuristic (cos
 `evaluate_capture(context, history) -> tuple[Critique, ...]`:
 
 1. Returns `context.used_in_optimization_for` as a baseline.
-2. Adds derived critiques:
-   - if `context.revenue_model == "ads"` and no critique mentions ad-targeting, append one with
-     citation to Lazzarato 2014 ch. 3.
-   - if `context.revenue_model == "data_sale"` and no critique mentions
-     surveillance/dispossession, append one with citation to Terranova 2004 ch. 3.
-   - if `context.end_users_consent_uri is None` and `revenue_model != "none"`, append one
-     citing Guattari, *Les Trois Écologies* §1.
+2. Adds derived critiques (keyword match is word-boundary regex, not substring):
+   - `revenue_model == "ads"` and no declared critique mentions ad-targeting → Lazzarato 2014 ch. 3.
+   - `revenue_model == "data_sale"` and no declared mentions surveillance/dispossession → Terranova 2004 ch. 3.
+   - `end_users_consent_uri is None` and `revenue_model != "none"` → Guattari, *Les Trois Écologies* §1.
 
-Derived critiques carry empty `source_ref` page ranges intentionally; the operator is expected to
-either resolve them (by editing context) or accept them.
+Derived critiques carry empty `source_ref` page ranges; the operator must resolve or accept them.
 
 ## 4. Adapters (optional)
 
@@ -271,8 +271,7 @@ hidden:
 9. Citing Guattari/Lazzarato/Terranova in docs requires checking edition rights — human task.
 10. v0.1.0 issue triage in the first 30 days is fully human; no bots.
 
-This list is referenced by `tests/test_intervention_points.py` (count must be 10 or higher;
-removing checkpoints is a deliberate edit).
+Referenced by `tests/test_intervention_points.py` (count >= 10; removals are deliberate edits).
 
 ## 6. Non-goals
 
@@ -294,9 +293,8 @@ machinic-assemblage is **not**:
 
 ## 8. Out of scope for v0.1.0 (tracked for later)
 
-- `arXiv:2512.19734` ("Deleuzian Representation Hypothesis") primitive-overlap analysis. The paper
-  was not fully reconciled before v0.1.0 freeze; see `docs/open_questions.md`.
-- `os-climate` integration for the environmental axis — v0.2.0.
-- Full LangGraph adapter — v0.2.0.
+- `arXiv:2512.19734` ("Deleuzian Representation Hypothesis") primitive-overlap analysis;
+  see `docs/open_questions.md`.
+- `os-climate` integration (environmental axis) and full LangGraph adapter — both v0.2.0.
 - A second-order capture detector (detector of capture of the detector). Gödel-style infinite
   regress is acknowledged and bounded at one layer; see `docs/limits.md`.
