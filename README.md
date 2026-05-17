@@ -5,7 +5,7 @@ the entanglement of humans, agents, datasets, and organisations that
 produces decisions in multi-agent systems — under three irreducible
 ecologies: mental, social, environmental.
 
-Status: alpha (v0.1.0). Python 3.11+. Apache-2.0.
+Status: alpha (v0.1.3). Python 3.11+. Apache-2.0.
 
 > machinic-assemblage is a protocol for **evaluating collective enunciation under three
 > irreducible ecologies (mental, social, environmental)**. It is written against the capture
@@ -153,7 +153,7 @@ GitHub Actions runs:
 - No closed enumeration of capture risks. Every capture warning is an answerable
   `Critique`.
 - No silent dependencies. Adapters for LangGraph / Obsidian are skeleton-only in
-  v0.1.0 and not imported by the core.
+  v0.1.x and not imported by the core.
 
 These are not omissions; they are the spec.
 

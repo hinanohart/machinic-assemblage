@@ -27,6 +27,15 @@ class TestNode:
         with pytest.raises(ValueError, match="kind"):
             Node(id=NodeId("a"), kind="")
 
+    def test_whitespace_only_id_rejected(self):
+        """v0.1.3 M5: whitespace-only required strings must be rejected like empty."""
+        with pytest.raises(ValueError, match=r"Node\.id"):
+            Node(id=NodeId("   "), kind="human")
+
+    def test_whitespace_only_kind_rejected(self):
+        with pytest.raises(ValueError, match=r"Node\.kind"):
+            Node(id=NodeId("a"), kind="\t\n")
+
     def test_frozen(self):
         n = Node(id=NodeId("a"), kind="human")
         with pytest.raises(Exception):
@@ -202,11 +211,20 @@ class TestCritique:
                 falsifiability_condition="dissolves if criterion C is publicly demonstrated",
             )
 
-    def test_other_author_with_single_char_tokens_rejected(self):
-        """v0.1.2 bypass-pin: 1-char tokens with 4-digit year must be rejected."""
+    def test_other_author_with_pure_punctuation_rejected(self):
+        """v0.1.3 M1 bypass-pin: punctuation-only tokens with a year must be rejected."""
         with pytest.raises(ValueError, match="primary_source"):
             Critique(
-                text="a sufficient text body — primary_source: a, b, c 9999",
+                text="a sufficient text body — primary_source: ##, %%, ^^ 2024",
+                source_ref=SourceRef(author="<other>", work="X", edition="Y"),
+                falsifiability_condition="dissolves if criterion C is publicly demonstrated",
+            )
+
+    def test_other_author_with_digits_only_tokens_rejected(self):
+        """v0.1.3 M1 bypass-pin: digit-only tokens (no letters) must be rejected."""
+        with pytest.raises(ValueError, match="primary_source"):
+            Critique(
+                text="a sufficient text body — primary_source: 1, 2, 3 9999",
                 source_ref=SourceRef(author="<other>", work="X", edition="Y"),
                 falsifiability_condition="dissolves if criterion C is publicly demonstrated",
             )
@@ -218,6 +236,37 @@ class TestCritique:
                 text="a sufficient text body — primary_source:  ,  ,   1975",
                 source_ref=SourceRef(author="<other>", work="X", edition="Y"),
                 falsifiability_condition="dissolves if criterion C is publicly demonstrated",
+            )
+
+    def test_other_author_with_single_letter_initial_accepted(self):
+        """v0.1.3 F4: legitimate citations with single-letter initials/titles must pass.
+
+        v0.1.2 over-rejected H. Lefebvre-style citations. The v0.1.3 regex requires each
+        token to contain at least one letter but allows length 1 — `A` is a real work title.
+        """
+        c = Critique(
+            text=("a sufficient text body — primary_source: H. Lefebvre, A, Pub 1990"),
+            source_ref=SourceRef(author="<other>", work="X", edition="Y"),
+            falsifiability_condition="dissolves if criterion C is publicly demonstrated",
+        )
+        assert c is not None
+
+    def test_critique_whitespace_only_text_rejected(self):
+        """v0.1.3 M5: whitespace-only text strings must be rejected even at >=16 chars."""
+        with pytest.raises(ValueError, match="non-trivial"):
+            Critique(
+                text=" " * 30,
+                source_ref=SourceRef(author="Guattari", work="X", edition="Y"),
+                falsifiability_condition="dissolves if criterion C is publicly demonstrated",
+            )
+
+    def test_critique_whitespace_only_falsifiability_rejected(self):
+        """v0.1.3 M5: whitespace-only falsifiability conditions must be rejected."""
+        with pytest.raises(ValueError, match="falsifiability"):
+            Critique(
+                text="a sufficient text body for the critique to be considered valid",
+                source_ref=SourceRef(author="Guattari", work="X", edition="Y"),
+                falsifiability_condition="\t" * 20,
             )
 
 

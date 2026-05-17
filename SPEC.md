@@ -1,4 +1,4 @@
-# machinic-assemblage — Protocol Specification v0.1.0
+# machinic-assemblage — Protocol Specification v0.1.x (current: v0.1.3)
 
 Status: alpha. The protocol is small, opinionated, and deliberately inconvenient. Names, types and
 operations are stable for the v0.1.x line; semantics may sharpen in v0.2.x.
@@ -209,7 +209,7 @@ contribution here is treating it as a normative axis with documented limits, not
   member-pairs) to total edges; 1.0 = perfect reciprocity.
 - `environmental`: a non-positive number drawn from `context.environmental_kgco2eq_estimate` if
   the operator supplied one, otherwise `0.0` with a warning. **CodeCarbon integration is not in
-  v0.1.0**; the protocol just exposes the slot.
+  v0.1.x**; the protocol just exposes the slot.
 
 Each value is in `[0, 1]` (environmental is `min(1.0, max(0.0, 1 - kg/threshold))`); the threshold
 default is documented in `docs/environmental.md`.
@@ -255,12 +255,12 @@ Derived critiques carry empty `source_ref` page ranges; the operator must resolv
 ## 4. Adapters (optional)
 
 `adapters/langgraph_adapter.py` and `adapters/obsidian_adapter.py` are stubs. They are not
-imported by the core. Real adapters live in `adapters/` and may add optional dependencies. v0.1.0
+imported by the core. Real adapters live in `adapters/` and may add optional dependencies. v0.1.x
 ships **skeletons only** to document the interface; full adapters are v0.2.x.
 
 ## 5. Pipeline & intervention points
 
-The protocol is not "fully automatic". v0.1.0 ships **ten human-in-the-loop checkpoints**, none
+The protocol is not "fully automatic". v0.1.x ships **ten human-in-the-loop checkpoints**, none
 hidden:
 
 1. Operator authors `DeploymentContext` (manual, by definition).
@@ -272,7 +272,7 @@ hidden:
 7. `kluster.ai` review may flag false positives — human triage.
 8. GitHub API rate limit during release flow is a human reset.
 9. Citing Guattari/Lazzarato/Terranova in docs requires checking edition rights — human task.
-10. v0.1.0 issue triage in the first 30 days is fully human; no bots.
+10. v0.1.x issue triage in the first 30 days is fully human; no bots.
 
 Referenced by `tests/test_intervention_points.py` (count >= 10; removals are deliberate edits).
 
@@ -294,7 +294,7 @@ machinic-assemblage is **not**:
 - The political statement (§0) is fixed across v0.1.x. Editing it requires a v0.2.0.
 - The "ten intervention points" list (§5) may grow; it will not shrink.
 
-## 8. Out of scope for v0.1.0 (tracked for later)
+## 8. Out of scope for v0.1.x (tracked for later)
 
 - `arXiv:2512.19734` ("Deleuzian Representation Hypothesis") primitive-overlap analysis;
   see `docs/open_questions.md`.

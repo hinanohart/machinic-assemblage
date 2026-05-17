@@ -21,6 +21,16 @@ from typing import Any, Literal, NewType, get_args
 NodeId = NewType("NodeId", str)
 
 
+def _require_nonblank(value: str, name: str) -> None:
+    """Reject empty *and* whitespace-only strings for required fields.
+
+    A field that is required but accepts ``' '`` or ``'\\t' * 10`` is functionally optional;
+    SPEC §2 treats required strings as positive content, not placeholders.
+    """
+    if not value or not value.strip():
+        raise ValueError(f"{name} must be non-empty and not whitespace-only")
+
+
 class Side(str, Enum):
     """Content / expression — *Mille Plateaux*, plateau 4 (Massumi 1987 pp. 88–89)."""
 
@@ -51,10 +61,8 @@ class Node:
     attrs: tuple[tuple[str, str], ...] = ()
 
     def __post_init__(self) -> None:
-        if not self.id:
-            raise ValueError("Node.id must be non-empty")
-        if not self.kind:
-            raise ValueError("Node.kind must be non-empty")
+        _require_nonblank(self.id, "Node.id")
+        _require_nonblank(self.kind, "Node.kind")
 
 
 @dataclass(frozen=True)
@@ -78,18 +86,17 @@ class HeterogeneousEdge:
     def __post_init__(self) -> None:
         if not self.members:
             raise ValueError("HeterogeneousEdge.members must be non-empty")
-        if not self.semantic:
-            raise ValueError("HeterogeneousEdge.semantic must be non-empty")
+        _require_nonblank(self.semantic, "HeterogeneousEdge.semantic")
         if not math.isfinite(self.weight):
             raise ValueError("HeterogeneousEdge.weight must be finite (no NaN/inf)")
         if self.weight < 0.0:
             raise ValueError("HeterogeneousEdge.weight must be non-negative")
-        if self.subtract and not self.subtract_reason:
+        if self.subtract and not self.subtract_reason.strip():
             raise ValueError(
                 "HeterogeneousEdge.subtract requires subtract_reason "
                 "(see SPEC §2.1: N-1 is not set difference)."
             )
-        if self.subtract_reason and not self.subtract:
+        if self.subtract_reason.strip() and not self.subtract:
             raise ValueError(
                 "HeterogeneousEdge.subtract_reason set without subtract; "
                 "use subtract=frozenset({node_id}) or clear the reason."
@@ -114,12 +121,9 @@ class Utterance:
     timestamp_iso: str
 
     def __post_init__(self) -> None:
-        if not self.speaker:
-            raise ValueError("Utterance.speaker must be non-empty")
-        if not self.kind:
-            raise ValueError("Utterance.kind must be non-empty")
-        if not self.timestamp_iso:
-            raise ValueError("Utterance.timestamp_iso must be ISO 8601 string, not empty")
+        _require_nonblank(self.speaker, "Utterance.speaker")
+        _require_nonblank(self.kind, "Utterance.kind")
+        _require_nonblank(self.timestamp_iso, "Utterance.timestamp_iso")
 
 
 @dataclass(frozen=True)
@@ -132,12 +136,9 @@ class SourceRef:
     pages: str = ""
 
     def __post_init__(self) -> None:
-        if not self.author:
-            raise ValueError("SourceRef.author must be non-empty")
-        if not self.work:
-            raise ValueError("SourceRef.work must be non-empty")
-        if not self.edition:
-            raise ValueError("SourceRef.edition must be non-empty")
+        _require_nonblank(self.author, "SourceRef.author")
+        _require_nonblank(self.work, "SourceRef.work")
+        _require_nonblank(self.edition, "SourceRef.edition")
 
 
 _ALLOWED_CRITIQUE_AUTHORS = frozenset(
@@ -153,16 +154,40 @@ _ALLOWED_CRITIQUE_AUTHORS = frozenset(
 )
 
 # Closes the `<other>` author hatch. The substring `"primary_source:"` alone is not enough —
-# a real citation must follow: `Author, Work, Publisher YEAR`. Each token must start with at
-# least two non-whitespace characters; year must be a four-digit number.
+# a real citation must follow: `Author, Work, Publisher YEAR`. The regex captures three
+# comma-separated tokens followed by a 4-digit year; Python-level validation then requires each
+# token to contain at least one Unicode letter AND have length >= 2 after stripping.
 #
-# Honest limit: a regex cannot enforce *semantic* citation quality. The CI grep blocks 1-char
-# tokens and whitespace-only tokens (the cheapest dummy citations); real-looking dummies like
-# `aa, bb, cc 1999` will still pass and rely on human review per SPEC §5 intervention point 5.
+# Honest limits documented in CHANGELOG v0.1.3:
+# - A regex cannot enforce *semantic* citation quality. Real-looking but dummy citations like
+#   `aa, bb, cc 1999` will still pass and rely on human review per SPEC §5 intervention point 5.
+# - Legitimate citations with single-letter author initials (e.g. `H. Lefebvre, A, Pub 1990`)
+#   pass because tokens are length>=2 (`H.`, `A` after strip is length 1 — but `A` is a single
+#   letter and we accept it; v0.1.2 incorrectly rejected this).
 _PRIMARY_SOURCE_RE = re.compile(
-    r"primary_source:\s*\S\S[^,\n]*,\s*\S\S[^,\n]*,\s*\S\S[^,\n]*\s+\d{4}\b",
+    r"primary_source:\s*([^,\n]+),\s*([^,\n]+),\s*([^,\n]+?)\s+(\d{4})\b",
     re.IGNORECASE,
 )
+
+
+def _has_valid_primary_source(text: str) -> bool:
+    """Validate ``primary_source: Author, Work, Publisher YEAR`` citation in ``text``.
+
+    Each of the three tokens must (a) strip to a non-empty string and (b) contain at least one
+    Unicode letter. Pure-punctuation tokens (``##, %%, ^^ 2024``) and whitespace-only tokens
+    are rejected. Single-letter tokens like ``A`` are accepted (legitimate citations contain
+    initials and short titles).
+    """
+    m = _PRIMARY_SOURCE_RE.search(text)
+    if not m:
+        return False
+    for raw in (m.group(1), m.group(2), m.group(3)):
+        stripped = raw.strip()
+        if not stripped:
+            return False
+        if not any(ch.isalpha() for ch in stripped):
+            return False
+    return True
 
 
 @dataclass(frozen=True)
@@ -174,8 +199,8 @@ class Critique:
     compliance checklist. A `Critique` is answerable, not categorical.
 
     The `<other>` author escape requires a regex-matched `primary_source:` citation of the
-    form ``primary_source: Author, Work, Publisher YEAR``. Bare keyword substrings are
-    rejected.
+    form ``primary_source: Author, Work, Publisher YEAR``. Pure-punctuation, whitespace-only,
+    and letterless tokens are rejected.
     """
 
     text: str
@@ -183,24 +208,25 @@ class Critique:
     falsifiability_condition: str
 
     def __post_init__(self) -> None:
-        if not self.text or len(self.text) < 16:
+        if not self.text or len(self.text.strip()) < 16:
             raise ValueError(
                 "Critique.text must be a non-trivial natural-language description "
-                "(>= 16 chars). Capture warnings are answerable, not categorical."
+                "(>= 16 non-whitespace chars). Capture warnings are answerable, not categorical."
             )
-        if not self.falsifiability_condition or len(self.falsifiability_condition) < 16:
+        if not self.falsifiability_condition or len(self.falsifiability_condition.strip()) < 16:
             raise ValueError(
-                "Critique.falsifiability_condition is required (>= 16 chars). "
+                "Critique.falsifiability_condition is required (>= 16 non-whitespace chars). "
                 "A critique with no observable disconfirmation is dogma, not analysis."
             )
         author_ok = self.source_ref.author in _ALLOWED_CRITIQUE_AUTHORS or (
-            self.source_ref.author == "<other>" and bool(_PRIMARY_SOURCE_RE.search(self.text))
+            self.source_ref.author == "<other>" and _has_valid_primary_source(self.text)
         )
         if not author_ok:
             raise ValueError(
                 f"Critique.source_ref.author must be one of {_ALLOWED_CRITIQUE_AUTHORS} "
                 f"or '<other>' with a regex-matching 'primary_source: Author, Work, "
-                f"Publisher YEAR' in text; got {self.source_ref.author!r}."
+                f"Publisher YEAR' in text (each citation token must contain a letter); "
+                f"got {self.source_ref.author!r}."
             )
 
 
@@ -219,10 +245,8 @@ class DeploymentContext:
     environmental_kgco2eq_estimate: float | None = None
 
     def __post_init__(self) -> None:
-        if not self.operator_org:
-            raise ValueError("DeploymentContext.operator_org must be non-empty")
-        if not self.declared_at_iso:
-            raise ValueError("DeploymentContext.declared_at_iso must be ISO 8601, not empty")
+        _require_nonblank(self.operator_org, "DeploymentContext.operator_org")
+        _require_nonblank(self.declared_at_iso, "DeploymentContext.declared_at_iso")
         if self.revenue_model not in get_args(RevenueModel):
             raise ValueError(
                 f"DeploymentContext.revenue_model must be one of "

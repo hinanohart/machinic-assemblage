@@ -104,8 +104,13 @@ def evaluate_capture(
     ``"adversarial"`` containing ``"ad"`` no longer falsely suppress the Lazzarato
     ad-targeting critique. This is load-bearing: a silent false-negative here would let the
     very capture this detector exists to flag pass through unannotated.
+
+    ``history`` is reserved for v0.2.0 history-conditioned critiques (e.g. repeated
+    ``rule_change`` utterances about engagement strengthening the ad-targeting flag). v0.1.x
+    accepts it for forward signature stability but does not read it. It is kept in the
+    signature so v0.2.0 can ship without an API break.
     """
-    del history  # v0.1.0: history-conditioned critiques are tracked for v0.2.0
+    _ = history  # reserved (see docstring); kept in signature, intentionally unread in v0.1.x
     out: list[Critique] = list(context.used_in_optimization_for)
     declared = tuple(out)
     if context.revenue_model == "ads" and not any(_matches(c, _AD_TARGETING_RE) for c in declared):

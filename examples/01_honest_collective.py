@@ -14,6 +14,9 @@ Expected report:
 
 from __future__ import annotations
 
+import pathlib
+import tempfile
+
 from machinic_assemblage import (
     DeploymentContext,
     HeterogeneousEdge,
@@ -97,7 +100,8 @@ def main() -> None:
     )
     print(f"is_subject_group = {report.is_subject_group}")
     print(f"capture_warnings = {len(report.capture_warnings)} critique(s)")
-    commit(report, "/tmp/machinic_assemblage_example_01.jsonl")
+    out_path = pathlib.Path(tempfile.gettempdir()) / "machinic_assemblage_example_01.jsonl"
+    commit(report, out_path)
 
 
 if __name__ == "__main__":

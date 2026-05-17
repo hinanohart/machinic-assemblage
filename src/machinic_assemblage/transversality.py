@@ -69,7 +69,12 @@ def transversality_index(
         return 0.0
     values = list(h.values())
     if any(v == 0.0 for v in values):
-        return 0.0 * _cross_layer_edge_ratio(a)
+        # SPEC §3.2: T = 0 when any speaker lives in one layer (geomean is 0 if any term is 0).
+        # v0.1.x trade-off: a single single-layer speaker zeroes T regardless of others. The
+        # operator is expected to read T as a Pareto axis, not a fitness signal; v0.2.0 may
+        # adopt a Laplace-smoothed variant. The cross-layer ratio is not consulted here because
+        # geomean = 0 dominates the product algebraically.
+        return 0.0
     log_mean = sum(math.log(v) for v in values) / len(values)
     geomean = math.exp(log_mean)
     return geomean * _cross_layer_edge_ratio(a)
