@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Protocol for evaluating collective enunciation under three-ecology KPIs"
+authors:
+  - family-names: "Hart"
+    given-names: "Hinano"
+    alias: "hinanohart"
+type: software
+license: "NOASSERTION"
+repository-code: "https://github.com/hinanohart/machinic-assemblage"
+url: "https://github.com/hinanohart/machinic-assemblage"
+version: "0.1.3"
+date-released: "2026-05-16"
+keywords:
+  - "critical-theory"
+  - "deleuze"
+  - "evaluation"
+  - "guattari"
+  - "multi-agent"
+  - "python"
+  - "three-ecologies"
