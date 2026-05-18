@@ -5,7 +5,7 @@ the entanglement of humans, agents, datasets, and organisations that
 produces decisions in multi-agent systems — under three irreducible
 ecologies: mental, social, environmental.
 
-Status: alpha (v0.1.3). Python 3.11+. Apache-2.0.
+Status: alpha (v0.1.3). Python 3.11+. MIT.
 
 > machinic-assemblage is a protocol for **evaluating collective enunciation under three
 > irreducible ecologies (mental, social, environmental)**. It is written against the capture
@@ -179,7 +179,7 @@ See [SPEC §6](SPEC.md#6-non-goals) for the binding statement.
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
 
 ## Acknowledgements
 
