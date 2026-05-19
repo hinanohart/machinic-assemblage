@@ -9,7 +9,7 @@ description = "Protocol spec for evaluating collective enunciation under three-e
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
-authors = [{ name = "machinic-assemblage contributors" }]
+authors = [{ name = "Hinano Hart", email = "runzaisongpu95@gmail.com" }]
 keywords = ["multi-agent", "evaluation", "protocol", "ethics", "guattari"]
 classifiers = [
   "Development Status :: 3 - Alpha",
